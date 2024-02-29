@@ -1,5 +1,7 @@
 package org.example;
 
+import static org.apache.flink.table.api.Expressions.$;
+
 import org.apache.flink.api.common.RuntimeExecutionMode;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.connector.kafka.source.KafkaSource;
@@ -12,36 +14,34 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.example.model.NetworkUsage;
 import org.example.model.NetworkUsageDeserializer;
 
-import static org.apache.flink.table.api.Expressions.$;
-
 public class DataProcessor {
 
-    public void job() {
-        final StreamExecutionEnvironment env =
-                StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setRuntimeMode(RuntimeExecutionMode.STREAMING);
+  public void job() {
+    final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+    env.setRuntimeMode(RuntimeExecutionMode.STREAMING);
 
-        StreamTableEnvironment tEnv = StreamTableEnvironment.create(env);
+    StreamTableEnvironment tEnv = StreamTableEnvironment.create(env);
 
-        KafkaSource<NetworkUsage> networkUsageSource =
-                KafkaSource.<NetworkUsage>builder()
-                        .setBootstrapServers("kafka:9092")
-                        .setTopics("network_usage")
-                        .setStartingOffsets(OffsetsInitializer.earliest())
-                        .setDeserializer(KafkaRecordDeserializationSchema.valueOnly(NetworkUsageDeserializer.class))
-                        .build();
+    KafkaSource<NetworkUsage> networkUsageSource =
+        KafkaSource.<NetworkUsage>builder()
+            .setBootstrapServers("kafka:9092")
+            .setTopics("network_usage")
+            .setStartingOffsets(OffsetsInitializer.earliest())
+            .setDeserializer(
+                KafkaRecordDeserializationSchema.valueOnly(NetworkUsageDeserializer.class))
+            .build();
 
-        DataStream<NetworkUsage> networkUsageStream =
-                env.fromSource(networkUsageSource, WatermarkStrategy.noWatermarks(), "network_usage");
+    DataStream<NetworkUsage> networkUsageStream =
+        env.fromSource(networkUsageSource, WatermarkStrategy.noWatermarks(), "network_usage");
 
-        Table results =
-                tEnv.fromDataStream(networkUsageStream)
-                        .groupBy($("userId"))
-                        .select(
-                                $("userId"),
-                                $("bytesConsumed").sum().as("totalUsage"),
-                                $("timestamp").max().as("lastActive"));
+    Table results =
+        tEnv.fromDataStream(networkUsageStream)
+            .groupBy($("userId"))
+            .select(
+                $("userId"),
+                $("bytesConsumed").sum().as("totalUsage"),
+                $("timestamp").max().as("lastActive"));
 
-        results.execute().print();
-    }
+    results.execute().print();
+  }
 }
