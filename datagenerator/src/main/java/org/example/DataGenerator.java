@@ -20,7 +20,6 @@ public class DataGenerator implements Runnable {
     return props;
   }
 
-  private static final String TOPIC = "network_usage";
   private boolean isRunning = true;
 
   @Override
@@ -39,7 +38,7 @@ public class DataGenerator implements Runnable {
 
       NetworkUsage networkUsage = nuSupplier.get();
       ProducerRecord<Long, NetworkUsage> record =
-          new ProducerRecord<>(TOPIC, null, millis, networkUsage.userId, networkUsage);
+          new ProducerRecord<>(networkUsage.topic(), null, millis, networkUsage.userId, networkUsage);
       producer.send(record);
 
       System.out.println("Produced record : " + new String(dummy.serialize("", networkUsage)));
