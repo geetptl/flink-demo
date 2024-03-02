@@ -11,8 +11,12 @@ COPY ./dataprocessor/pom.xml /opt/dataprocessor/pom.xml
 
 RUN cd /opt/dataprocessor && mvn clean verify
 
-FROM apache/flink:1.18-scala_2.12-java17 AS runner
+FROM eclipse-temurin:17 AS runner
 LABEL authors="geet"
+
+ADD https://dlcdn.apache.org/flink/flink-1.18.1/flink-1.18.1-bin-scala_2.12.tgz /opt/flink-1.18.1.tgz
+
+RUN tar -xvzf /opt/flink-1.18.1.tgz -C /opt/
 
 COPY --from=builder /opt/dataprocessor/target/dataprocessor-*.jar /opt/dataprocessor.jar
 
